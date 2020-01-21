@@ -1,0 +1,290 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "RecommendationService.proto",
+    "version": "version not set"
+  },
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/getCollabrativeFilteringData": {
+      "post": {
+        "operationId": "GetCollabrativeFilteringData",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "$ref": "#/x-stream-definitions/RecommendationServiceMovieTile"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/RecommendationServiceGetRecommendationRequest"
+            }
+          }
+        ],
+        "tags": [
+          "RecommendationService"
+        ]
+      }
+    },
+    "/getContentbasedData": {
+      "post": {
+        "operationId": "GetContentbasedData",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "$ref": "#/x-stream-definitions/RecommendationServiceMovieTile"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/RecommendationServiceGetRecommendationRequest"
+            }
+          }
+        ],
+        "tags": [
+          "RecommendationService"
+        ]
+      }
+    },
+    "/initRecommendationEngine": {
+      "post": {
+        "operationId": "InitialRecommendationEngine",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/RecommendationServiceInitRecommendationResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/RecommendationServiceInitRecommendationRequest"
+            }
+          }
+        ],
+        "tags": [
+          "RecommendationService"
+        ]
+      }
+    },
+    "/tileClicked": {
+      "post": {
+        "operationId": "TileClicked",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/RecommendationServiceTileClickedResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/RecommendationServiceTileClickedRequest"
+            }
+          }
+        ],
+        "tags": [
+          "RecommendationService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "RecommendationServiceCONTENT": {
+      "type": "object",
+      "properties": {
+        "detailPage": {
+          "type": "boolean",
+          "format": "boolean"
+        },
+        "package": {
+          "type": "string"
+        }
+      }
+    },
+    "RecommendationServiceGetRecommendationRequest": {
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string"
+        }
+      }
+    },
+    "RecommendationServiceInitRecommendationRequest": {
+      "type": "object",
+      "properties": {
+        "genres": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "categories": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "languages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "RecommendationServiceInitRecommendationResponse": {
+      "type": "object",
+      "properties": {
+        "isDone": {
+          "type": "boolean",
+          "format": "boolean"
+        }
+      }
+    },
+    "RecommendationServiceMETADATA": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string"
+        }
+      }
+    },
+    "RecommendationServiceMovieTile": {
+      "type": "object",
+      "properties": {
+        "ref_id": {
+          "type": "string"
+        },
+        "posters": {
+          "$ref": "#/definitions/RecommendationServicePOSTERS"
+        },
+        "content": {
+          "$ref": "#/definitions/RecommendationServiceCONTENT"
+        },
+        "metadata": {
+          "$ref": "#/definitions/RecommendationServiceMETADATA"
+        }
+      }
+    },
+    "RecommendationServicePOSTERS": {
+      "type": "object",
+      "properties": {
+        "landscape": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "portrait": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "RecommendationServiceTileClickedRequest": {
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string"
+        },
+        "tileId": {
+          "type": "string"
+        },
+        "tileScore": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "RecommendationServiceTileClickedResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean",
+          "format": "boolean"
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "type_url": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "runtimeStreamError": {
+      "type": "object",
+      "properties": {
+        "grpc_code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "http_code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "http_status": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    }
+  },
+  "x-stream-definitions": {
+    "RecommendationServiceMovieTile": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/RecommendationServiceMovieTile"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of RecommendationServiceMovieTile"
+    }
+  }
+}
