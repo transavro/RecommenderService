@@ -46,7 +46,7 @@ func (h *RecommendationServiceHandler) GetCollabrativeFilteringData( req *Recomm
 		stringResultCmd := h.RedisConnection.SMembers(userRedisKey)
 		resultStringArray := stringResultCmd.Val()
 		for i := 0 ; i < len(resultStringArray) ; i++ {
-			var resultMovie RecommendationService.MovieTile
+			var resultMovie RecommendationService.ContentTile
 			err := proto.Unmarshal([]byte(resultStringArray[i]), &resultMovie)
 			if err != nil {
 				return err
@@ -71,7 +71,7 @@ func (h *RecommendationServiceHandler) GetCollabrativeFilteringData( req *Recomm
 				resultInBytes, _ := result.Bytes()
 				h.RedisConnection.Del(userRedisKey)
 				h.RedisConnection.SAdd(userRedisKey,resultInBytes)
-				var movieTiles RecommendationService.MovieTile
+				var movieTiles RecommendationService.ContentTile
 				err := proto.Unmarshal(resultInBytes, &movieTiles)
 				if err != nil {
 					return err
@@ -95,7 +95,7 @@ func (h *RecommendationServiceHandler) InitialRecommendationEngine(ctx context.C
 		for _,v := range genres {
 			genreKey :=  fmt.Sprintf("genre:%s:items", v)
 			genreKey = formatString(genreKey)
-			log.Println("genreKey  =====> ", genreKey)
+
 			myStages := mongo.Pipeline{
 				//stage 1
 				bson.D{{"$match", bson.D{{"metadata.genre", bson.D{{"$in", bson.A{v}}}}}}},
@@ -110,11 +110,12 @@ func (h *RecommendationServiceHandler) InitialRecommendationEngine(ctx context.C
 			}
 
 
-
+			count := 0
 			for cur.Next(ctx) {
+				count++
 				h.RedisConnection.SAdd(genreKey, cur.Current.Lookup("ref_id").StringValue())
 			}
-
+			log.Println(genreKey , " ==========>  ", count)
 			cur.Close(ctx)
 		}
 
@@ -125,7 +126,6 @@ func (h *RecommendationServiceHandler) InitialRecommendationEngine(ctx context.C
 		for _,v := range languages {
 			languageKey :=  fmt.Sprintf("languages:%s:items", v)
 			languageKey = formatString(languageKey)
-			log.Println("languageKey  =====> ", languageKey)
 			myStages := mongo.Pipeline{
 				//stage 1
 				bson.D{{"$match", bson.D{{"metadata.languages", bson.D{{"$in", bson.A{v}}}}}}},
@@ -139,9 +139,14 @@ func (h *RecommendationServiceHandler) InitialRecommendationEngine(ctx context.C
 				log.Println("error 3 ")
 			}
 
+			count := 0
 			for cur.Next(ctx) {
+				count++
 				h.RedisConnection.SAdd(languageKey, cur.Current.Lookup("ref_id").StringValue())
 			}
+
+
+			log.Println( languageKey, " ==========>  ",count)
 
 			cur.Close(ctx)
 		}
@@ -166,15 +171,20 @@ func (h *RecommendationServiceHandler) InitialRecommendationEngine(ctx context.C
 
 			}
 
-
+			count := 0
 			for cur.Next(ctx) {
+				count++
 				h.RedisConnection.SAdd(categoriesKey, cur.Current.Lookup("ref_id").StringValue())
 			}
+
+
+			log.Println( categoriesKey, " ==========>  ",count)
 
 			cur.Close(ctx)
 		}
 	}(req.GetCategories())
-	return nil, nil
+
+	return &RecommendationService.InitRecommendationResponse{IsDone:true}, nil
 }
 // helper function
 func formatString(value string) string {
@@ -190,14 +200,14 @@ func (h *RecommendationServiceHandler) GetContentbasedData(req *RecommendationSe
 	if isThere {
 		// get the updated Tile Clicked By the User
 		h.DiffContentBaseToTileClickedByUser(req.UserId)
-		result := h.RedisConnection.SMembers(fmt.Sprintf("user:%s:Contentbased", req.UserId))
+		result := h.RedisConnection.SRandMemberN(fmt.Sprintf("user:%s:Contentbased", req.UserId), 30)
 		if result.Err() != nil {
 			return result.Err()
 		}
 		tilesResult := h.RedisConnection.HMGet("cloudwalkerTiles", result.Val()...)
 		for i := 0 ; i < len(tilesResult.Val()) ; i++ {
 			if i < 20 {
-				var resultMovie RecommendationService.MovieTile
+				var resultMovie RecommendationService.ContentTile
 				err := proto.Unmarshal([]byte(fmt.Sprintf("%v", tilesResult.Val()[i])), &resultMovie)
 				if err != nil {
 					return err
@@ -223,7 +233,7 @@ func (h *RecommendationServiceHandler) GetContentbasedData(req *RecommendationSe
 		tilesResult := h.RedisConnection.HMGet("cloudwalkerTiles", result.Val()...)
 		for i := 0 ; i < len(tilesResult.Val()) ; i++ {
 			if i < 20 {
-				var resultMovie RecommendationService.MovieTile
+				var resultMovie RecommendationService.ContentTile
 				err := proto.Unmarshal([]byte(fmt.Sprintf("%v", tilesResult.Val()[i])), &resultMovie)
 				if err != nil {
 					return err
@@ -241,6 +251,8 @@ func (h *RecommendationServiceHandler) GetContentbasedData(req *RecommendationSe
 }
 
 func (h *RecommendationServiceHandler) PreProcessingContentbasedData(req *RecommendationService.GetRecommendationRequest) error  {
+
+	log.Println("PreProcessingContentbasedData")
 	// getting genre for user
 	result := h.RedisConnection.SMembers(fmt.Sprintf("user:%s:genre", req.UserId))
 	if result.Err() != nil {
@@ -248,7 +260,8 @@ func (h *RecommendationServiceHandler) PreProcessingContentbasedData(req *Recomm
 	}
 	var tempGenre []string
 	for _,v := range result.Val() {
-		tempGenre = append(tempGenre,fmt.Sprintf("genre:%s:items", v))
+		log.Println("genre   ====>    ", v)
+		tempGenre = append(tempGenre,fmt.Sprintf("genre:%s:items", formatString(v)))
 	}
 	genreResult := h.RedisConnection.SUnionStore(fmt.Sprintf("user:%s:genre:items", req.UserId),tempGenre...)
 	log.Println("genre",genreResult.Val())
@@ -259,11 +272,12 @@ func (h *RecommendationServiceHandler) PreProcessingContentbasedData(req *Recomm
 	}
 	var tempLanguages []string
 	for _,v := range result.Val() {
-		tempLanguages = append(tempLanguages,fmt.Sprintf("languages:%s:items", v) )
+		log.Println("lang    ====>    ", v)
+		tempLanguages = append(tempLanguages,fmt.Sprintf("languages:%s:items", formatString(v)) )
 	}
-	log.Println(len(tempLanguages))
-	h.RedisConnection.SUnionStore(fmt.Sprintf("user:%s:languages:items", req.UserId),tempLanguages...)
 
+	languageResult := h.RedisConnection.SUnionStore(fmt.Sprintf("user:%s:languages:items", req.UserId),tempLanguages...)
+	log.Println("language ",languageResult.Val())
 	// getting categories for user
 	result = h.RedisConnection.SMembers(fmt.Sprintf("user:%s:categories", req.UserId))
 	if result.Err() != nil {
@@ -271,24 +285,37 @@ func (h *RecommendationServiceHandler) PreProcessingContentbasedData(req *Recomm
 	}
 	var tempCategories []string
 	for _,v := range result.Val() {
-		tempCategories = append(tempCategories,fmt.Sprintf("categories:%s:items", v) )
+		log.Println("cateogires   ====>    ", v)
+		tempCategories = append(tempCategories,fmt.Sprintf("categories:%s:items", formatString(v)) )
 	}
-	log.Println(len(tempCategories))
-	h.RedisConnection.SUnionStore(fmt.Sprintf("user:%s:categories:items", req.UserId),tempCategories...)
+
+
+	categoriesResult := h.RedisConnection.SUnionStore(fmt.Sprintf("user:%s:categories:items", req.UserId),tempCategories...)
+	log.Println("categories ",categoriesResult.Val())
+
 	// get tiles which content all its taste of user
-	h.RedisConnection.SInterStore(fmt.Sprintf("user:%s:InterStore", req.UserId),
+	unionResultCount := h.RedisConnection.SUnionStore(fmt.Sprintf("user:%s:UnionStore", req.UserId),
 		fmt.Sprintf("user:%s:genre:items", req.UserId),
 		fmt.Sprintf("user:%s:languages:items", req.UserId),
-		fmt.Sprintf("user:%s:categories:items", req.UserId))
+		fmt.Sprintf("user:%s:categories:items", req.UserId)).Val()
+
+	log.Println("Union Result count    ", unionResultCount)
 
 	tileClickedByUser := h.RedisConnection.ZRevRange(fmt.Sprintf("user:%s:items", req.UserId), 0, -1)
-	h.RedisConnection.SAdd(fmt.Sprintf("user:%s:temp", req.UserId),tileClickedByUser.Val())
-	resultOfDiff := h.RedisConnection.SDiffStore(fmt.Sprintf("user:%s:Contentbased", req.UserId),fmt.Sprintf("user:%s:InterStore", req.UserId),fmt.Sprintf("user:%s:temp", req.UserId))
-	if resultOfDiff.Err() != nil {
-		log.Fatal(resultOfDiff.Err())
+	if len(tileClickedByUser.Val()) > 0 {
+		h.RedisConnection.SAdd(fmt.Sprintf("user:%s:temp", req.UserId),tileClickedByUser.Val())
+		resultOfDiff := h.RedisConnection.SDiffStore(fmt.Sprintf("user:%s:Contentbased", req.UserId),fmt.Sprintf("user:%s:UnionStore", req.UserId),fmt.Sprintf("user:%s:temp", req.UserId))
+		if resultOfDiff.Err() != nil {
+			log.Fatal(resultOfDiff.Err())
+		}
+		log.Println(resultOfDiff.Val())
+	}else {
+		interTileUser := h.RedisConnection.SMembers(fmt.Sprintf("user:%s:UnionStore", req.UserId))
+		h.RedisConnection.SAdd(fmt.Sprintf("user:%s:Contentbased", req.UserId),interTileUser.Val())
 	}
-	log.Println(resultOfDiff.Val())
-	h.RedisConnection.Del(fmt.Sprintf("user:%s:temp", req.UserId), fmt.Sprintf("user:%s:InterStore", req.UserId))
+
+	//Deleting temp key
+	h.RedisConnection.Del(fmt.Sprintf("user:%s:temp", req.UserId), fmt.Sprintf("user:%s:UnionStore", req.UserId))
 	return nil
 }
 

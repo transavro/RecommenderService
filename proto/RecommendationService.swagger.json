@@ -18,7 +18,7 @@
           "200": {
             "description": "A successful response.(streaming responses)",
             "schema": {
-              "$ref": "#/x-stream-definitions/RecommendationServiceMovieTile"
+              "$ref": "#/x-stream-definitions/RecommendationServiceContentTile"
             }
           }
         },
@@ -44,7 +44,7 @@
           "200": {
             "description": "A successful response.(streaming responses)",
             "schema": {
-              "$ref": "#/x-stream-definitions/RecommendationServiceMovieTile"
+              "$ref": "#/x-stream-definitions/RecommendationServiceContentTile"
             }
           }
         },
@@ -117,14 +117,41 @@
     }
   },
   "definitions": {
-    "RecommendationServiceCONTENT": {
+    "RecommendationServiceContentTile": {
       "type": "object",
       "properties": {
-        "detailPage": {
+        "title": {
+          "type": "string"
+        },
+        "mediaUrl": {
+          "type": "string"
+        },
+        "tileType": {
+          "$ref": "#/definitions/RecommendationServiceTileType"
+        },
+        "poster": {
+          "type": "string"
+        },
+        "portrait": {
+          "type": "string"
+        },
+        "isDetailPage": {
           "type": "boolean",
           "format": "boolean"
         },
-        "package": {
+        "packageName": {
+          "type": "string"
+        },
+        "contentId": {
+          "type": "string"
+        },
+        "target": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "realeaseDate": {
           "type": "string"
         }
       }
@@ -169,48 +196,6 @@
         }
       }
     },
-    "RecommendationServiceMETADATA": {
-      "type": "object",
-      "properties": {
-        "title": {
-          "type": "string"
-        }
-      }
-    },
-    "RecommendationServiceMovieTile": {
-      "type": "object",
-      "properties": {
-        "ref_id": {
-          "type": "string"
-        },
-        "posters": {
-          "$ref": "#/definitions/RecommendationServicePOSTERS"
-        },
-        "content": {
-          "$ref": "#/definitions/RecommendationServiceCONTENT"
-        },
-        "metadata": {
-          "$ref": "#/definitions/RecommendationServiceMETADATA"
-        }
-      }
-    },
-    "RecommendationServicePOSTERS": {
-      "type": "object",
-      "properties": {
-        "landscape": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "portrait": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      }
-    },
     "RecommendationServiceTileClickedRequest": {
       "type": "object",
       "properties": {
@@ -234,6 +219,18 @@
           "format": "boolean"
         }
       }
+    },
+    "RecommendationServiceTileType": {
+      "type": "string",
+      "enum": [
+        "ImageTile",
+        "VideoTile",
+        "FeatureTile",
+        "AdvertiseTile",
+        "CarouselTile"
+      ],
+      "default": "ImageTile",
+      "title": "contentTile"
     },
     "protobufAny": {
       "type": "object",
@@ -274,17 +271,17 @@
     }
   },
   "x-stream-definitions": {
-    "RecommendationServiceMovieTile": {
+    "RecommendationServiceContentTile": {
       "type": "object",
       "properties": {
         "result": {
-          "$ref": "#/definitions/RecommendationServiceMovieTile"
+          "$ref": "#/definitions/RecommendationServiceContentTile"
         },
         "error": {
           "$ref": "#/definitions/runtimeStreamError"
         }
       },
-      "title": "Stream result of RecommendationServiceMovieTile"
+      "title": "Stream result of RecommendationServiceContentTile"
     }
   }
 }

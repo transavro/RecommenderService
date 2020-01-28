@@ -12,13 +12,13 @@ service RecommendationService {
                 body: "*"
         };
     }
-    rpc GetCollabrativeFilteringData(GetRecommendationRequest) returns (stream MovieTile) {
+    rpc GetCollabrativeFilteringData(GetRecommendationRequest) returns (stream ContentTile) {
         option (google.api.http) = {
                 post:"/getCollabrativeFilteringData"
                 body: "*"
         };
     }
-    rpc GetContentbasedData(GetRecommendationRequest) returns (stream MovieTile) {
+    rpc GetContentbasedData(GetRecommendationRequest) returns (stream ContentTile) {
         option (google.api.http) = {
                 post:"/getContentbasedData"
                 body: "*"
@@ -56,23 +56,46 @@ message TileClickedResponse {
     bool success = 1;
 }
 
-message MovieTile{
-    string ref_id = 1;
-    POSTERS posters = 2;
-    CONTENT content = 3;
-    METADATA metadata = 4;
-}
+//message MovieTile{
+//    string ref_id = 1;
+//    POSTERS posters = 2;
+//    CONTENT content = 3;
+//    METADATA metadata = 4;
+//}
+//
+//message METADATA {
+//    string title = 1;
+//}
+//
+//message POSTERS {
+//    repeated string landscape = 1;
+//    repeated string portrait = 2;
+//}
+//
+//message CONTENT {
+//    bool detailPage = 2;
+//    string package = 1;
+//}
 
-message METADATA {
+
+message ContentTile{
     string title = 1;
+    string mediaUrl = 2;
+    TileType tileType = 3;
+    string poster = 4;
+    string portrait = 5;
+    bool isDetailPage = 6;
+    string packageName = 7;
+    string contentId = 8;
+    repeated string target = 9;
+    string realeaseDate = 10;
 }
 
-message POSTERS {
-    repeated string landscape = 1;
-    repeated string portrait = 2;
-}
-
-message CONTENT {
-    bool detailPage = 2;
-    string package = 1;
+// contentTile
+enum TileType {
+    ImageTile = 0;
+    VideoTile = 1;
+    FeatureTile = 2;
+    AdvertiseTile = 3;
+    CarouselTile = 4;
 }
